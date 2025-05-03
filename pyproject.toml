@@ -1,0 +1,25 @@
+[project]
+name = "google-reader"
+version = "0.0.1"
+description = "Python client library for feed readers that utilize the Google Reader API"
+readme = "README.md"
+authors = [{ name = "Frédéric Guillot" }]
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.12"
+dependencies = ["requests"]
+classifiers = [
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/miniflux/google-reader"
+"Bug Reports" = "https://github.com/miniflux/google-reader/issues"
+"Source" = "https://github.com/miniflux/google-reader"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
