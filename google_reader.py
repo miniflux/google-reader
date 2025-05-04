@@ -9,6 +9,7 @@ STREAM_READ = "user/-/state/com.google/read"
 STREAM_STARRED = "user/-/state/com.google/starred"
 STREAM_KEPT_UNREAD = "user/-/state/com.google/kept-unread"
 STREAM_BROADCAST = "user/-/state/com.google/broadcast"
+STREAM_READING_LIST = "user/-/state/com.google/reading-list"
 
 
 class ClientError(Exception):
@@ -19,6 +20,13 @@ class ClientError(Exception):
 
 class AuthenticationError(ClientError):
     """Raised when authentication fails."""
+
+    def __init__(self, message: str):
+        super().__init__(message)
+
+
+class ResourceNotFoundError(ClientError):
+    """Raised when a resource is not found."""
 
     def __init__(self, message: str):
         super().__init__(message)
@@ -177,6 +185,29 @@ class Client:
         if not auth_token:
             raise AuthenticationError("No Auth token found in response")
         return AuthToken(TokenType="GoogleLogin", AccessToken=auth_token)
+
+    def get_token(self, auth: AuthToken) -> str:
+        """
+        Get the authentication token.
+
+        Args:
+            auth(AuthToken): Authentication token obtained from the login process.
+        Returns:
+            str: Authentication token.
+        Raises:
+            ClientError: If the request fails or the response is not valid.
+            AuthenticationError: If the authentication token is invalid.
+        """
+        response = self._session.get(
+            f"{self._base_url}/reader/api/0/token",
+            headers={"Authorization": f"{auth.TokenType} auth={auth.AccessToken}"},
+        )
+        if response.status_code == 401:
+            raise AuthenticationError("Authentication failed")
+        elif response.status_code != 200:
+            raise ClientError("Failed to get token")
+
+        return response.text.strip()
 
     def get_user_info(self, auth: AuthToken) -> UserInfo:
         """
@@ -570,6 +601,37 @@ class Client:
             raise ClientError("Failed to get tags")
 
         return [Tag(**tag) for tag in response.json().get("tags", [])]
+
+    def mark_all_as_read(self, auth: AuthToken, stream_id: str, before_timestamp: int | None = None) -> bool:
+        """
+        Mark all items in a stream as read.
+
+        Args:
+            auth(AuthToken): Authentication token obtained from the login process.
+            stream_id(str): ID of the stream to mark as read.
+            before_timestamp(int | None): Optional timestamp to mark items as read before this time.
+        Returns:
+            bool: True if the operation was successful, False otherwise.
+        Raises:
+            ClientError: If the request fails or the response is not valid.
+            AuthenticationError: If the authentication token is invalid.
+        """
+        data = {"s": stream_id, "T": auth.AccessToken}
+        if before_timestamp:
+            data["ts"] = str(before_timestamp)
+        response = self._session.post(
+            f"{self._base_url}/reader/api/0/mark-all-as-read",
+            headers={"Authorization": f"{auth.TokenType} auth={auth.AccessToken}"},
+            data=data,
+        )
+        match response.status_code:
+            case 401:
+                raise AuthenticationError("Authentication failed")
+            case 404:
+                raise ResourceNotFoundError("Stream not found")
+            case _ if response.status_code != 200:
+                raise ClientError("Failed to mark all as read")
+        return True
 
 
 def get_long_item_id(item_id: int) -> str:
