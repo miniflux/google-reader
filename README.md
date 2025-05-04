@@ -34,6 +34,23 @@ UserInfo(user_id='1', user_name='admin', user_email='admin@example.org', user_pr
 Documentation
 -------------
 
+- [Item IDs Format](#item-ids-format)
+- [Stream IDs](#stream-ids)
+- [Client Login](#client-login)
+- [Token](#token)
+- [User Information](#user-information)
+- [Subscriptions List](#subscriptions-list)
+- [Edit Subscription](#edit-subscription)
+- [Quick Add Subscription](#quick-add-subscription)
+- [Get Stream Items IDs](#get-stream-items-ids)
+- [Get Stream Items Contents](#get-stream-items-contents)
+- [Edit Tags](#edit-tags)
+- [Delete Tag](#delete-tag)
+- [Rename Tag](#rename-tag)
+- [List Tags](#list-tags)
+- [Mark all as read](#mark-all-as-read)
+- [Resources](#resources)
+
 ### Item IDs Format
 
 Item IDs can be returned in short or long form depending on the API method.
@@ -99,6 +116,26 @@ Python example:
 
 >>> client.login("my_username", "my_password")
 AuthToken(TokenType='GoogleLogin', AccessToken='test/8eec3f60a23a5b5464245054f60eb9ced8d5655c')
+```
+
+### Token
+
+Request:
+
+- URL: `/reader/api/0/token`
+- Method: `GET`
+- Supported formats: Returns the POST token in plain text format
+
+Python example:
+
+```python
+>>> import google_reader
+
+>>> client = google_reader.Client("https://reader.example.org/")
+>>> auth_token = client.login("my_username", "my_password")
+
+>>> client.get_token(auth_token)
+'ccd127a64a7150c5fae14e5699b3df6751c083d4ZZZZZZZZZZZZZZZZZ'
 ```
 
 ### User Information
@@ -515,6 +552,29 @@ Python example:
 
 >>> client.list_tags(auth_token)
 [Tag(id='user/1/state/com.google/starred', label=None, type=None), Tag(id='user/1/label/All', label='All', type='folder'), Tag(id='user/1/label/My Test', label='My Test', type='folder')]
+```
+
+### Mark all as read
+
+Request:
+
+- URL: `/reader/api/0/mark-all-as-read`
+- Method: `POST`
+- Supported formats: Returns "OK" in plain text
+- POST token required: Yes
+
+Parameters:
+
+- `s`: Stream ID
+- `ts` (optional): Unix Timestamp in seconds or microseconds. When provided, only items older than this timestamp are marked as read.
+
+Python example:
+
+```python
+>>> import google_reader
+
+>>> client = google_reader.Client("https://reader.example.org/")
+>>> auth_token = client.login("my_username", "my_password")
 ```
 
 ### Resources
