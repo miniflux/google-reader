@@ -128,7 +128,6 @@ class StreamContentItems:
     id: str
     title: str
     self: list[ContentHREF]
-    alternate: list[ContentHREFType]
     updated: int
     items: list[ContentItem]
     author: str
@@ -224,7 +223,6 @@ class Client:
         response = self._session.get(
             f"{self._base_url}/reader/api/0/user-info",
             headers={"Authorization": f"{auth.TokenType} auth={auth.AccessToken}"},
-            params={"output": "json"},
         )
         if response.status_code == 401:
             raise AuthenticationError("Authentication failed")
@@ -276,6 +274,7 @@ class Client:
     def edit_subscription(
         self,
         auth: AuthToken,
+        csrf_token: str,
         subscription_id: str,
         action: Literal["edit", "subscribe", "unsubscribe"],
         remove_label_id: str | None = None,
@@ -287,6 +286,7 @@ class Client:
 
         Args:
             auth(AuthToken): Authentication token obtained from the login process.
+            csrf_token(str): CSRF token for the request.
             subscription_id(str): ID of the subscription to edit.
             action(str): Action to perform on the subscription (edit, subscribe, unsubscribe).
             remove_label_id(str): Label to remove from the subscription.
@@ -298,7 +298,7 @@ class Client:
             ClientError: If the request fails or the response is not valid.
             AuthenticationError: If the authentication token is invalid.
         """
-        data = {"s": subscription_id, "ac": action, "T": auth.AccessToken}
+        data = {"s": subscription_id, "ac": action, "T": csrf_token}
         if remove_label_id:
             data["r"] = remove_label_id
         if add_label_id:
@@ -308,7 +308,6 @@ class Client:
         response = self._session.post(
             f"{self._base_url}/reader/api/0/subscription/edit",
             headers={"Authorization": f"{auth.TokenType} auth={auth.AccessToken}"},
-            params={"output": "json"},
             data=data,
         )
         if response.status_code == 401:
@@ -317,12 +316,13 @@ class Client:
             raise ClientError("Failed to edit subscription")
         return True
 
-    def quick_add_subscription(self, auth: AuthToken, url: str) -> QuickAddSubscription:
+    def quick_add_subscription(self, auth: AuthToken, csrf_token: str, url: str) -> QuickAddSubscription:
         """
         Quick add a subscription.
 
         Args:
             auth(AuthToken): Authentication token obtained from the login process.
+            csrf_token(str): CSRF token for the request.
             url(str): URL of the subscription to add.
         Returns:
             QuickAddSubscription: Object containing the result of the quick add operation.
@@ -334,7 +334,7 @@ class Client:
             f"{self._base_url}/reader/api/0/subscription/quickadd",
             headers={"Authorization": f"{auth.TokenType} auth={auth.AccessToken}"},
             params={"output": "json"},
-            data={"quickadd": url, "T": auth.AccessToken},
+            data={"quickadd": url, "T": csrf_token},
         )
         if response.status_code == 401:
             raise AuthenticationError("Authentication failed")
@@ -405,12 +405,13 @@ class Client:
             continuation=data.get("continuation", ""),
         )
 
-    def get_stream_items_contents(self, auth: AuthToken, item_ids: list[str]) -> StreamContentItems:
+    def get_stream_items_contents(self, auth: AuthToken, csrf_token: str, item_ids: list[str]) -> StreamContentItems:
         """
         Get the contents of items
 
         Args:
             auth(AuthToken): Authentication token obtained from the login process.
+            csrf_token(str): CSRF token for the request.
             item_ids(list[str]): List of item IDs to retrieve.
         Returns:
             StreamContentItems: List of item contents.
@@ -422,7 +423,7 @@ class Client:
             f"{self._base_url}/reader/api/0/stream/items/contents",
             headers={"Authorization": f"{auth.TokenType} auth={auth.AccessToken}"},
             params={"output": "json"},
-            data={"i": item_ids, "T": auth.AccessToken},
+            data={"i": item_ids, "T": csrf_token},
         )
         if response.status_code == 401:
             raise AuthenticationError("Authentication failed")
@@ -435,7 +436,6 @@ class Client:
             id=data.get("id", ""),
             title=data.get("title", ""),
             self=[ContentHREF(**item) for item in data.get("self", [])],
-            alternate=[ContentHREFType(**item) for item in data.get("alternate", [])],
             updated=data.get("updated", 0),
             items=[
                 ContentItem(
@@ -475,6 +475,7 @@ class Client:
     def edit_tags(
         self,
         auth: AuthToken,
+        csrf_token: str,
         item_ids: list[str],
         add_tags: list[str] | None = None,
         remove_tags: list[str] | None = None,
@@ -484,6 +485,7 @@ class Client:
 
         Args:
             auth(AuthToken): Authentication token obtained from the login process.
+            csrf_token(str): CSRF token for the request.
             item_ids(list[str]): List of item IDs to edit tags for.
             add_tags(list[str]): List of tags to add.
             remove_tags(list[str]): List of tags to remove.
@@ -493,7 +495,7 @@ class Client:
             ClientError: If the request fails or the response is not valid.
             AuthenticationError: If the authentication token is invalid.
         """
-        data = {"i": item_ids, "T": auth.AccessToken}
+        data = {"i": item_ids, "T": csrf_token}
         if add_tags:
             data["a"] = add_tags
         if remove_tags:
@@ -512,12 +514,13 @@ class Client:
             raise ClientError("Failed to edit tags")
         return True
 
-    def disable_tag(self, auth: AuthToken, tag_id: str) -> bool:
+    def disable_tag(self, auth: AuthToken, csrf_token: str, tag_id: str) -> bool:
         """
         Deletes a category or a tag.
 
         Args:
             auth(AuthToken): Authentication token obtained from the login process.
+            csrf_token(str): CSRF token for the request.
             tag_id(str): ID of the tag to delete.
         Returns:
             bool: True if the operation was successful, False otherwise.
@@ -529,7 +532,7 @@ class Client:
             f"{self._base_url}/reader/api/0/disable-tag",
             headers={"Authorization": f"{auth.TokenType} auth={auth.AccessToken}"},
             params={"output": "json"},
-            data={"s": tag_id, "T": auth.AccessToken},
+            data={"s": tag_id, "T": csrf_token},
         )
         if response.status_code == 401:
             raise AuthenticationError("Authentication failed")
@@ -537,12 +540,13 @@ class Client:
             raise ClientError("Failed to disable tags")
         return True
 
-    def delete_tag(self, auth: AuthToken, tag_id: str) -> bool:
+    def delete_tag(self, auth: AuthToken, csrf_token: str, tag_id: str) -> bool:
         """
         Deletes a category or a tag.
 
         Args:
             auth(AuthToken): Authentication token obtained from the login process.
+            csrf_token(str): CSRF token for the request.
             tag_id(str): ID of the tag to delete.
         Returns:
             bool: True if the operation was successful, False otherwise.
@@ -550,14 +554,15 @@ class Client:
             ClientError: If the request fails or the response is not valid.
             AuthenticationError: If the authentication token is invalid.
         """
-        return self.disable_tag(auth, tag_id)
+        return self.disable_tag(auth, csrf_token, tag_id)
 
-    def rename_tag(self, auth: AuthToken, tag_id: str, new_label_name: str) -> bool:
+    def rename_tag(self, auth: AuthToken, csrf_token: str, tag_id: str, new_label_name: str) -> bool:
         """
         Rename a category or a tag.
 
         Args:
             auth(AuthToken): Authentication token obtained from the login process.
+            csrf_token(str): CSRF token for the request.
             tag_id(str): ID of the tag to rename.
             new_label_name(str): New name for the category or tag.
         Returns:
@@ -570,7 +575,7 @@ class Client:
             f"{self._base_url}/reader/api/0/rename-tag",
             headers={"Authorization": f"{auth.TokenType} auth={auth.AccessToken}"},
             params={"output": "json"},
-            data={"s": tag_id, "dest": get_label_id(new_label_name), "T": auth.AccessToken},
+            data={"s": tag_id, "dest": get_label_id(new_label_name), "T": csrf_token},
         )
         if response.status_code == 401:
             raise AuthenticationError("Authentication failed")
@@ -602,12 +607,15 @@ class Client:
 
         return [Tag(**tag) for tag in response.json().get("tags", [])]
 
-    def mark_all_as_read(self, auth: AuthToken, stream_id: str, before_timestamp: int | None = None) -> bool:
+    def mark_all_as_read(
+        self, auth: AuthToken, csrf_token: str, stream_id: str, before_timestamp: int | None = None
+    ) -> bool:
         """
         Mark all items in a stream as read.
 
         Args:
             auth(AuthToken): Authentication token obtained from the login process.
+            csrf_token(str): CSRF token for the request.
             stream_id(str): ID of the stream to mark as read.
             before_timestamp(int | None): Optional timestamp to mark items as read before this time.
         Returns:
@@ -616,7 +624,7 @@ class Client:
             ClientError: If the request fails or the response is not valid.
             AuthenticationError: If the authentication token is invalid.
         """
-        data = {"s": stream_id, "T": auth.AccessToken}
+        data = {"s": stream_id, "T": csrf_token}
         if before_timestamp:
             data["ts"] = str(before_timestamp)
         response = self._session.post(

@@ -120,11 +120,14 @@ AuthToken(TokenType='GoogleLogin', AccessToken='test/8eec3f60a23a5b5464245054f60
 
 ### Token
 
+This endpoint returns a CSRF token required for making modifications.
+The token must be included as the `T` parameter in `POST` requests, along with the `Authorization` header.
+
 Request:
 
 - URL: `/reader/api/0/token`
 - Method: `GET`
-- Supported formats: Returns the POST token in plain text format
+- Supported formats: Returns the CSRF token in plain text format
 
 Python example:
 
@@ -220,7 +223,7 @@ Request:
 - URL: `/reader/api/0/subscription/edit`
 - Method: `POST`
 - Supported formats: Returns "OK" in plain text
-- POST token required: Yes
+- CSRF token required: Yes
 
 Creation:
 
@@ -248,11 +251,12 @@ Python Example:
 
 >>> client = google_reader.Client("https://reader.example.org/")
 >>> auth_token = client.login("my_username", "my_password")
+>>> csrf_token = client.get_token(auth_token)
 
->>> client.edit_subscription(auth_token, subscription_id="feed/1", action="edit", add_label_id=google_reader.get_label_id("Test"))
+>>> client.edit_subscription(auth_token, csrf_token, subscription_id="feed/1", action="edit", add_label_id=google_reader.get_label_id("Test"))
 True
 
->>> c.edit_subscription(auth_token, subscription_id="feed/1", action="edit", title="FreshRSS Releases")
+>>> c.edit_subscription(auth_token, csrf_token, subscription_id="feed/1", action="edit", title="New Feed Title")
 True
 ```
 
@@ -263,7 +267,7 @@ Request:
 - URL: `/reader/api/0/subscription/quickadd`
 - Method: `POST`
 - Supported formats: JSON
-- POST token required: Yes
+- CSRF token required: Yes
 
 Response:
 
@@ -283,8 +287,9 @@ Python Example:
 
 >>> client = google_reader.Client("https://reader.example.org/")
 >>> auth_token = client.login("my_username", "my_password")
+>>> csrf_token = client.get_token(auth_token)
 
->>> client.quick_add_subscription(auth_token, url="https://lemonde.fr")
+>>> client.quick_add_subscription(auth_token, csrf_token, url="https://lemonde.fr")
 QuickAddSubscription(query='https://www.lemonde.fr/rss/une.xml', num_results=1, stream_id='feed/2', stream_name='Le Monde.fr - Actualités et Infos en France et dans le monde'
 ```
 
@@ -295,7 +300,6 @@ Request:
 - URL: `/reader/api/0/stream/items/ids`
 - Method: `GET`
 - Supported formats: JSON
-- POST token required: Yes
 
 Querystring parameters:
 
@@ -338,7 +342,6 @@ Request:
 - URL: `/reader/api/0/stream/items/contents`
 - Methods: `GET`
 - Supported formats: JSON
-- POST token required: Yes
 
 Parameter:
 
@@ -436,7 +439,7 @@ Request:
 - URL: `/reader/api/0/edit-tag`
 - Method: `POST`
 - Supported formats: Returns "OK" in plain text
-- POST token required: Yes
+- CSRF token required: Yes
 
 Parameters:
 
@@ -460,8 +463,12 @@ Python example:
 
 >>> client = google_reader.Client("https://reader.example.org/")
 >>> auth_token = client.login("my_username", "my_password")
+>>> csrf_token = client.get_token(auth_token)
 
->>> client.edit_tags(auth_token, item_ids=[google_reader.get_long_item_id(1128)], add_tags=[google_reader.STREAM_STARRED])
+>>> client.edit_tags(auth_token, csrf_token, item_ids=[google_reader.get_long_item_id(1128)], add_tags=[google_reader.STREAM_STARRED])
+True
+
+>>> client.edit_tags(auth_token, csrf_token, item_ids=['1746307865812560'], add_tags=[google_reader.STREAM_STARRED])
 True
 ```
 
@@ -472,7 +479,7 @@ Request:
 - URL: `/reader/api/0/disable-tag`
 - Method: `POST`
 - Supported formats: Returns "OK" in plain text
-- POST token required: Yes
+- CSRF token required: Yes
 
 Parameters:
 
@@ -485,11 +492,12 @@ Python example:
 
 >>> client = google_reader.Client("https://reader.example.org/")
 >>> auth_token = client.login("my_username", "my_password")
+>>> csrf_token = client.get_token(auth_token)
 
->>> client.disable_tag(auth_token, tag_id='user/-/label/Test')
+>>> client.disable_tag(auth_token, csrf_token, tag_id='user/-/label/Test')
 True
 
->>> client.delete_tag(auth_token, tag_id='user/-/label/Test')
+>>> client.delete_tag(auth_token, csrf_token, tag_id='user/-/label/Test')
 True
 ```
 
@@ -500,7 +508,7 @@ Request:
 - URL: `/reader/api/0/rename-tag`
 - Method: `POST`
 - Supported formats: Returns "OK" in plain text
-- POST token required: Yes
+- CSRF token required: Yes
 
 Parameters:
 
@@ -514,8 +522,9 @@ Python example:
 
 >>> client = google_reader.Client("https://reader.example.org/")
 >>> auth_token = client.login("my_username", "my_password")
+>>> csrf_token = client.get_token(auth_token)
 
->>> client.rename_tag(auth_token, tag_id='user/-/label/All', new_label_name="Something Else")
+>>> client.rename_tag(auth_token, csrf_token, tag_id='user/-/label/All', new_label_name="Something Else")
 True
 ```
 
@@ -561,7 +570,7 @@ Request:
 - URL: `/reader/api/0/mark-all-as-read`
 - Method: `POST`
 - Supported formats: Returns "OK" in plain text
-- POST token required: Yes
+- CSRF token required: Yes
 
 Parameters:
 
@@ -575,6 +584,10 @@ Python example:
 
 >>> client = google_reader.Client("https://reader.example.org/")
 >>> auth_token = client.login("my_username", "my_password")
+>>> csrf_token = client.get_token(auth_token)
+
+>>> client.mark_all_as_read(auth_token, csrf_token, 'feed/1')
+True
 ```
 
 ### Resources
